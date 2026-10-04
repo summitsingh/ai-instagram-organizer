@@ -264,7 +264,7 @@ Ensure important categories aren't over-filtered
 - **Semantic similarity** (understanding photo meaning)
 - **Temporal clustering** (grouping by time periods)
 - **Location-based filtering** (GPS coordinate analysis)
-- **Face recognition integration** (person-specific filtering)
+- **Face recognition integration** (person-specific filtering) — REMOVED from roadmap: the project has an absolute no-facial-recognition rule (see AGENTS.md). Person filtering, if ever needed, must use non-biometric cues only (e.g. clothing color, position in frame).
 - **Custom context rules** (user-defined similarity criteria)
 
 ---

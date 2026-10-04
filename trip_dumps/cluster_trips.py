@@ -154,7 +154,55 @@ def parse_box(s):
     return tuple(parts)
 
 
-def main():
+def temporal_clusters(items, gap_days):
+    """Split date-sorted items into clusters; a gap >= gap_days starts a new trip."""
+    clusters, cur = [], [items[0]]
+    gap = timedelta(days=gap_days)
+    for it in items[1:]:
+        if (it["dt"] - cur[-1]["dt"]) >= gap:
+            clusters.append(cur)
+            cur = [it]
+        else:
+            cur.append(it)
+    clusters.append(cur)
+    return clusters
+
+
+def geo_split_trips(clusters, geo_split_km):
+    """Split each temporal cluster on a SUSTAINED geographic jump.
+
+    A jump > geo_split_km between consecutive GPS-bearing photos splits the
+    trip only if the next GPS-bearing photo is also far from the pre-jump
+    spot, so one-off bad GPS fixes don't split a trip.
+    """
+    trips = []
+    for cl in clusters:
+        sub, cur_sub = [], [cl[0]]
+        i = 0
+        while i < len(cl) - 1:
+            it = cl[i + 1]
+            prev = cur_sub[-1]
+            split = False
+            if prev["lat"] is not None and it["lat"] is not None:
+                if haversine_km((prev["lat"], prev["lon"]),
+                                (it["lat"], it["lon"])) > geo_split_km:
+                    nxt = next((c for c in cl[i + 2:] if c["lat"] is not None), None)
+                    if nxt is None or haversine_km(
+                            (prev["lat"], prev["lon"]),
+                            (nxt["lat"], nxt["lon"])) > geo_split_km:
+                        split = True
+            if split:
+                sub.append(cur_sub)
+                cur_sub = [it]
+            else:
+                cur_sub.append(it)
+            i += 1
+        sub.append(cur_sub)
+        trips.extend(sub)
+    return trips
+
+
+def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--source", required=True, help="photo directory tree")
     ap.add_argument("--out-json", default="trip_clusters.json")
@@ -171,7 +219,7 @@ def main():
                     help="User-Agent for Nominatim (include contact)")
     ap.add_argument("--min-photos", type=int, default=1,
                     help="drop clusters smaller than this from the report")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     box = parse_box(args.gps_box) if args.gps_box else None
 
@@ -198,42 +246,9 @@ def main():
     items.sort(key=lambda x: x["dt"])
     print(f"photos with dates: {len(items)}", flush=True)
 
-    # Temporal clustering.
-    clusters, cur = [], [items[0]]
-    gap = timedelta(days=args.gap_days)
-    for it in items[1:]:
-        if (it["dt"] - cur[-1]["dt"]) >= gap:
-            clusters.append(cur)
-            cur = [it]
-        else:
-            cur.append(it)
-    clusters.append(cur)
-
-    # Geographic split: sustained jumps only.
-    trips = []
-    for cl in clusters:
-        sub, cur_sub = [], [cl[0]]
-        i = 0
-        while i < len(cl) - 1:
-            it = cl[i + 1]
-            prev = cur_sub[-1]
-            split = False
-            if prev["lat"] is not None and it["lat"] is not None:
-                if haversine_km((prev["lat"], prev["lon"]),
-                                (it["lat"], it["lon"])) > args.geo_split_km:
-                    nxt = next((c for c in cl[i + 2:] if c["lat"] is not None), None)
-                    if nxt is None or haversine_km(
-                            (prev["lat"], prev["lon"]),
-                            (nxt["lat"], nxt["lon"])) > args.geo_split_km:
-                        split = True
-            if split:
-                sub.append(cur_sub)
-                cur_sub = [it]
-            else:
-                cur_sub.append(it)
-            i += 1
-        sub.append(cur_sub)
-        trips.extend(sub)
+    # Temporal clustering, then split on sustained geographic jumps.
+    clusters = temporal_clusters(items, args.gap_days)
+    trips = geo_split_trips(clusters, args.geo_split_km)
     print(f"raw trip clusters: {len(trips)}", flush=True)
 
     results = []

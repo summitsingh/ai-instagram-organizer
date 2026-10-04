@@ -1,0 +1,20 @@
+# Optional dependencies: advanced/analytics features only. Core trip-dump
+# pipeline and main CLI run without these. Install with:
+#   pip install -r requirements-optional.txt
+# (or: python install_advanced_features.py, which also fetches NLTK data)
+
+# Analytics & visualization (features/analytics.py: charts, reports)
+matplotlib==3.10.6
+seaborn==0.13.2
+pandas==2.3.2
+
+# Computer vision & ML (advanced_cv_analyzer.py, features/image_enhancement.py,
+# semantic_context_analyzer.py, instagram_engagement_predictor.py)
+opencv-python==4.12.0.88
+scipy==1.16.2
+joblib==1.5.2
+
+# NLP (hashtag intelligence / semantic analyzers, via install_advanced_features.py)
+nltk==3.9.1
+textblob
+scikit-learn

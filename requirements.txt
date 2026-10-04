@@ -1,30 +1,10 @@
-certifi==2025.8.3
-charset-normalizer==3.4.3
-click==8.3.0
-contourpy==1.3.3
-cycler==0.12.1
-fonttools==4.60.0
-idna==3.10
-ImageHash==4.3.2
-joblib==1.5.2
-kiwisolver==1.4.9
-matplotlib==3.10.6
-nltk==3.9.1
-numpy==2.2.6
-opencv-python==4.12.0.88
-packaging==25.0
-pandas==2.3.2
-pillow==11.3.0
-pillow_heif==1.1.0
-pyparsing==3.2.4
-python-dateutil==2.9.0.post0
-pytz==2025.2
-PyWavelets==1.9.0
-regex==2025.9.1
-requests==2.32.5
-scipy==1.16.2
-seaborn==0.13.2
-six==1.17.0
-tqdm==4.67.1
-tzdata==2025.2
-urllib3==2.5.0
+# Core dependencies: everything the trip-dump pipeline (trip_dumps/) and the
+# main CLI (ai_instagram_organizer.py) need. Install with:
+#   pip install -r requirements.txt
+
+pillow==11.3.0          # image I/O, EXIF, thumbnails, contact sheets
+pillow-heif==1.1.0      # HEIC/HEIF opener for Pillow
+ImageHash==4.3.2        # perceptual hashing (dedup in main CLI)
+numpy==2.2.6            # required by ImageHash
+requests==2.32.5        # Nominatim geocoding + provider API calls
+tqdm==4.67.1            # progress bars in main CLI

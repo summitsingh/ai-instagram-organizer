@@ -1,0 +1,5 @@
+# pytest configuration: offline unit tests only live under tests/.
+# The legacy live-API scripts in tests/ (test_gemini_*, test_llama_*, ...) are
+# NOT collected here; CI runs the offline files explicitly.
+[tool.pytest.ini_options]
+testpaths = ["tests"]

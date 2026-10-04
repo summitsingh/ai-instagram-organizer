@@ -54,10 +54,18 @@ An AI-powered tool that automatically organizes your photos into Instagram-ready
 
 ### Prerequisites
 
-1. **Install Python dependencies**:
+1. **Install Python dependencies** (core: everything the trip-dump pipeline and
+   the main CLI need):
 
    ```bash
-   pip install pillow imagehash pillow-heif requests
+   pip install -r requirements.txt
+   ```
+
+   For analytics/advanced features (charts, CV analysis, engagement
+   prediction), also install the optional set:
+
+   ```bash
+   pip install -r requirements-optional.txt
    ```
 
 ### Option 1: Llama API (Default - Recommended)
@@ -270,18 +278,19 @@ Full playbook: [`docs/TRIP_DUMP_PIPELINE.md`](docs/TRIP_DUMP_PIPELINE.md).
 
 ```bash
 # 1. Cluster photos into trips by capture date + GPS
-python trip_dumps/cluster_trips.py --source ~/photos/2025 \
+python ai_instagram_organizer.py trip-dump cluster --source ~/photos/2025 \
     --out-json trip_clusters.json --out-md trip-candidates.md --geocode
 
 # 2. Run the curation funnel on one trip (GPS box isolates embedded trips)
-python trip_dumps/curate_carousel.py --source ~/photos/2025 \
+python ai_instagram_organizer.py trip-dump curate --source ~/photos/2025 \
     --out-dir ./oahu-review --start 2025-02-13 --end 2025-02-28 \
     --gps-box 21.2,21.8,-158.35,-157.6
 
-# 3. Review sheet_*.jpg, note finalist indexes, assemble the draft bundle
-python trip_dumps/curate_carousel.py --out-dir ./oahu-review \
+# 3. Review sheet_*.jpg, note finalist manifest indexes, assemble the draft bundle
+python ai_instagram_organizer.py trip-dump curate --out-dir ./oahu-review \
     --assemble "12,11,33,48" --draft-dir ./options/oahu
 ```
+(Standalone form also works: `python -m trip_dumps cluster ...` / `python -m trip_dumps curate ...`.)
 
 Key rules baked in: filename timestamps beat EXIF dates, dHash dedup before any
 vision review (~150 thumbnails max per trip, never the full set), full-resolution
@@ -292,13 +301,27 @@ For AI coding agents: [`AGENTS.md`](AGENTS.md) is the agent operating guide, and
 an installable skill (works in `~/.claude/skills`, Codex skills dirs, OpenClaw,
 etc.) that teaches an agent to run this workflow conversationally.
 
+### Use with AI assistants
+
+Install the skill once, then ask your assistant to run the trip-dump workflow:
+
+```bash
+cp -r skills/instagram-trip-dumps/ ~/.claude/skills/     # Claude Code
+cp -r skills/instagram-trip-dumps/ ~/.codex/skills/      # Codex
+cp -r skills/instagram-trip-dumps/ ~/.hermes/skills/      # Hermes
+openclaw skills install ./skills/instagram-trip-dumps --as instagram-trip-dumps --global  # OpenClaw
+```
+
+For ChatGPT: create a custom GPT and paste the contents of
+`skills/instagram-trip-dumps/SKILL.md` into its Instructions field.
+
 ## 🔧 Advanced Setup
 
 ### For Full Features (Optional)
 
 ```bash
-# Install additional dependencies for advanced features
-pip install matplotlib seaborn opencv-python
+# Install the optional analytics/advanced-feature dependencies
+pip install -r requirements-optional.txt
 
 # Run with all features enabled
 python ai_instagram_organizer.py --config config.json
@@ -346,16 +369,16 @@ Edit `config.json`:
 
 ## 📦 Dependencies
 
-### Required
+### Core (trip-dump pipeline + main CLI)
 
 ```bash
-pip install pillow imagehash pillow-heif requests
+pip install -r requirements.txt
 ```
 
-### Optional (for advanced features)
+### Optional (analytics + advanced features: charts, CV analysis, engagement prediction)
 
 ```bash
-pip install matplotlib seaborn opencv-python
+pip install -r requirements-optional.txt
 ```
 
 ## 🔄 Switching Between AI Providers

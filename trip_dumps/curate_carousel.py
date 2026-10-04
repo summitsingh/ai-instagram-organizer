@@ -273,7 +273,7 @@ def parse_box(s):
     return tuple(parts)
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--source", help="photo directory tree")
     ap.add_argument("--out-dir", required=True, help="review working dir")
@@ -291,7 +291,7 @@ def main():
     ap.add_argument("--draft-dir", help="output dir for --assemble")
     ap.add_argument("--quality", type=int, default=93,
                     help="JPEG quality for assembled slides")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     os.makedirs(args.out_dir, exist_ok=True)
 

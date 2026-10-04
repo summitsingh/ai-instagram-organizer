@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run offline tests
+        # ONLY the offline unit tests run in CI. The legacy live-API scripts
+        # in tests/ (test_gemini_*, test_llama_*, test_multi_provider, ...)
+        # need real API keys and are never executed here.
+        run: pytest tests/test_offline_tripdumps.py tests/test_offline_core.py -v
