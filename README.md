@@ -261,6 +261,37 @@ python ai_instagram_organizer.py --source "~/Photos/Trip" --post-size 12
 python ai_instagram_organizer.py --simple-mode --dev-mode --limit 50
 ```
 
+## 🗺️ Trip-Dump Pipeline
+
+Turn a giant unsorted photo library into Instagram-ready "trip dump" carousels.
+Proven end to end in Sep-Oct 2026: 18,099 photos taken in 2025 -> 19 trip dumps
+found -> 4 carousel drafts (Telluride, NYC, Big Island, Oahu, 15-17 slides each).
+Full playbook: [`docs/TRIP_DUMP_PIPELINE.md`](docs/TRIP_DUMP_PIPELINE.md).
+
+```bash
+# 1. Cluster photos into trips by capture date + GPS
+python trip_dumps/cluster_trips.py --source ~/photos/2025 \
+    --out-json trip_clusters.json --out-md trip-candidates.md --geocode
+
+# 2. Run the curation funnel on one trip (GPS box isolates embedded trips)
+python trip_dumps/curate_carousel.py --source ~/photos/2025 \
+    --out-dir ./oahu-review --start 2025-02-13 --end 2025-02-28 \
+    --gps-box 21.2,21.8,-158.35,-157.6
+
+# 3. Review sheet_*.jpg, note finalist indexes, assemble the draft bundle
+python trip_dumps/curate_carousel.py --out-dir ./oahu-review \
+    --assemble "12,11,33,48" --draft-dir ./options/oahu
+```
+
+Key rules baked in: filename timestamps beat EXIF dates, dHash dedup before any
+vision review (~150 thumbnails max per trip, never the full set), full-resolution
+face checks on finalists, strict no-visible-faces rule, original crops preserved.
+
+For AI coding agents: [`AGENTS.md`](AGENTS.md) is the agent operating guide, and
+[`skills/instagram-trip-dumps/SKILL.md`](skills/instagram-trip-dumps/SKILL.md) is
+an installable skill (works in `~/.claude/skills`, Codex skills dirs, OpenClaw,
+etc.) that teaches an agent to run this workflow conversationally.
+
 ## 🔧 Advanced Setup
 
 ### For Full Features (Optional)
