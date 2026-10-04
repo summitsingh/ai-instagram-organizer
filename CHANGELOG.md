@@ -5,6 +5,10 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+- PEP 517/621 package metadata, Hatchling builds, and `ai-instagram-organizer`
+  and `trip-dump` console commands for pip installs.
+
 ## [0.2.0] - 2026-10-04
 
 ### Added

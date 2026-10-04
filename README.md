@@ -55,19 +55,18 @@ An AI-powered tool that automatically organizes your photos into Instagram-ready
 
 ### Prerequisites
 
-1. **Install Python dependencies** (core: everything the trip-dump pipeline and
-   the main CLI need):
+Install from GitHub today:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install git+https://github.com/summitsingh/ai-instagram-organizer.git
+```
 
-   For analytics/advanced features (charts, CV analysis, engagement
-   prediction), also install the optional set:
+The package is **not on the PyPI index yet**. After publication, install it with
+`pip install ai-instagram-organizer` or add `[optional]` for advanced features.
+From a repo checkout, `pip install -r requirements-optional.txt` adds the same
+optional dependencies.
 
-   ```bash
-   pip install -r requirements-optional.txt
-   ```
+The installed commands are `ai-instagram-organizer` and `trip-dump`.
 
 ### Option 1: Llama API (Default - Recommended)
 
@@ -323,16 +322,6 @@ For ChatGPT: create a custom GPT and paste the contents of
 
 ## 🔧 Advanced Setup
 
-### For Full Features (Optional)
-
-```bash
-# Install the optional analytics/advanced-feature dependencies
-pip install -r requirements-optional.txt
-
-# Run with all features enabled
-python ai_instagram_organizer.py --config config.json
-```
-
 ### Custom AI Models
 
 Edit `config.json`:
@@ -372,20 +361,6 @@ Edit `config.json`:
 2. **Test small first**: Always use `--dev-mode --limit 5` initially
 3. **Use simple mode**: Add `--simple-mode` if you don't need advanced features
 4. **Check your photos**: Make sure they're actual photos, not screenshots
-
-## 📦 Dependencies
-
-### Core (trip-dump pipeline + main CLI)
-
-```bash
-pip install -r requirements.txt
-```
-
-### Optional (analytics + advanced features: charts, CV analysis, engagement prediction)
-
-```bash
-pip install -r requirements-optional.txt
-```
 
 ## 🔄 Switching Between AI Providers
 
