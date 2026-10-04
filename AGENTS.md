@@ -60,6 +60,22 @@ python trip_dumps/curate_carousel.py --source ~/photos/2025 \
 # 3. Assemble the ordered draft bundle from full-res originals
 python trip_dumps/curate_carousel.py --out-dir ./oahu-review \
     --assemble "12,11,33,48" --draft-dir ./options/oahu
+
+# 4. After publishing, register the bundle so it is never picked again
+python -m trip_dumps mark-posted --draft-dir ./options/oahu \
+    --post-url https://www.instagram.com/p/XXXX/
+# (curate with --exclude-posted to skip registered photos on future runs)
+```
+
+## Reels
+
+`reels/assemble.py` trims and concatenates real-motion clips into one vertical
+reel (ffmpeg, optional system dep). Still-image slideshows are out of scope by
+design.
+
+```bash
+python reels/assemble.py --clip intro.mp4:3.0 --clip main.mp4 \
+    --clip outro.mp4:2.5 --audio track.mp3 --out reel.mp4
 ```
 
 ## Conventions

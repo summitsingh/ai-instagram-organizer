@@ -3,6 +3,7 @@
 Pure-function tests only: no network, no live APIs, no sleeping. Synthetic
 inputs and tmp_path fixtures throughout.
 """
+
 import json
 import sys
 from datetime import datetime, timedelta
@@ -14,10 +15,10 @@ from PIL import Image
 
 from trip_dumps import cluster_trips, curate_carousel
 
-
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
+
 
 def _item(dt, lat=None, lon=None):
     return {"dt": dt, "lat": lat, "lon": lon, "file": "x.jpg"}
@@ -26,10 +27,15 @@ def _item(dt, lat=None, lon=None):
 def _pattern_image(path, seed_a, seed_b):
     """Deterministic patterned image so dHash is stable and non-degenerate."""
     px = Image.new("RGB", (64, 64))
-    data = [((x * seed_a + y * seed_b) % 256,
-             (x * (seed_a + 6) + y * (seed_b + 2)) % 256,
-             (x * (seed_a + 12) + y * (seed_b + 8)) % 256)
-            for y in range(64) for x in range(64)]
+    data = [
+        (
+            (x * seed_a + y * seed_b) % 256,
+            (x * (seed_a + 6) + y * (seed_b + 2)) % 256,
+            (x * (seed_a + 12) + y * (seed_b + 8)) % 256,
+        )
+        for y in range(64)
+        for x in range(64)
+    ]
     px.putdata(data)
     px.save(path)
 
@@ -37,6 +43,7 @@ def _pattern_image(path, seed_a, seed_b):
 # ---------------------------------------------------------------------------
 # filename-timestamp date parsing (cluster_trips.fname_dt / curate fname_dt)
 # ---------------------------------------------------------------------------
+
 
 class TestFnameDt:
     def test_valid_stamp(self):
@@ -48,7 +55,9 @@ class TestFnameDt:
         assert dt == datetime(2025, 12, 7, 16, 26, 59)
 
     def test_valid_stamp_embedded_in_longer_name(self):
-        dt = cluster_trips.fname_dt("20250301_120000_2025-02-13_09-03-08_000-edited.jpg")
+        dt = cluster_trips.fname_dt(
+            "20250301_120000_2025-02-13_09-03-08_000-edited.jpg"
+        )
         assert dt == datetime(2025, 2, 13, 9, 3, 8)
 
     def test_no_pattern_returns_none(self):
@@ -69,6 +78,7 @@ class TestFnameDt:
 # trip clustering / splitting on synthetic photo lists
 # ---------------------------------------------------------------------------
 
+
 class TestTemporalClusters:
     def test_single_cluster_when_no_gap(self):
         items = [_item(datetime(2025, 2, 13) + timedelta(hours=h)) for h in (0, 5, 20)]
@@ -80,7 +90,7 @@ class TestTemporalClusters:
         items = [
             _item(datetime(2025, 2, 13, 10)),
             _item(datetime(2025, 2, 14, 10)),
-            _item(datetime(2025, 3, 1, 10)),   # 15-day gap -> new trip
+            _item(datetime(2025, 3, 1, 10)),  # 15-day gap -> new trip
             _item(datetime(2025, 3, 2, 10)),
         ]
         clusters = cluster_trips.temporal_clusters(items, gap_days=3)
@@ -88,14 +98,18 @@ class TestTemporalClusters:
 
     def test_gap_boundary_is_inclusive(self):
         # A gap of exactly >= gap_days starts a new trip.
-        items = [_item(datetime(2025, 2, 13, 10)),
-                 _item(datetime(2025, 2, 16, 10))]  # exactly 3 days later
+        items = [
+            _item(datetime(2025, 2, 13, 10)),
+            _item(datetime(2025, 2, 16, 10)),
+        ]  # exactly 3 days later
         clusters = cluster_trips.temporal_clusters(items, gap_days=3)
         assert len(clusters) == 2
 
     def test_custom_gap_days(self):
-        items = [_item(datetime(2025, 2, 13, 10)),
-                 _item(datetime(2025, 2, 16, 10))]  # 3-day gap
+        items = [
+            _item(datetime(2025, 2, 13, 10)),
+            _item(datetime(2025, 2, 16, 10)),
+        ]  # 3-day gap
         assert len(cluster_trips.temporal_clusters(items, gap_days=3)) == 2
         assert len(cluster_trips.temporal_clusters(items, gap_days=4)) == 1
 
@@ -106,8 +120,10 @@ class TestGeoSplit:
 
     def _trip(self, coords):
         base = datetime(2025, 2, 13, 10)
-        return [_item(base + timedelta(hours=i), lat, lon)
-                for i, (lat, lon) in enumerate(coords)]
+        return [
+            _item(base + timedelta(hours=i), lat, lon)
+            for i, (lat, lon) in enumerate(coords)
+        ]
 
     def test_sustained_jump_splits(self):
         items = self._trip([self.OAHU, self.OAHU, self.NYC, self.NYC])
@@ -121,7 +137,7 @@ class TestGeoSplit:
         items = self._trip([self.OAHU, self.NYC, self.OAHU, self.OAHU])
         trips = cluster_trips.geo_split_trips([items], geo_split_km=150)
         assert len(trips) == 2
-        assert [ (it["lat"], it["lon"]) for it in trips[0] ] == [self.OAHU, self.NYC]
+        assert [(it["lat"], it["lon"]) for it in trips[0]] == [self.OAHU, self.NYC]
         assert all((it["lat"], it["lon"]) == self.OAHU for it in trips[1])
 
     def test_missing_gps_never_splits(self):
@@ -137,10 +153,16 @@ class TestGeoSplit:
 
 class TestParseBox:
     def test_valid_box(self):
-        assert cluster_trips.parse_box("21.2,21.8,-158.35,-157.6") == (21.2, 21.8, -158.35, -157.6)
+        assert cluster_trips.parse_box("21.2,21.8,-158.35,-157.6") == (
+            21.2,
+            21.8,
+            -158.35,
+            -157.6,
+        )
 
     def test_invalid_box_raises(self):
         import pytest
+
         with pytest.raises(ValueError):
             cluster_trips.parse_box("21.2,21.8,-158.35")
 
@@ -148,6 +170,7 @@ class TestParseBox:
 # ---------------------------------------------------------------------------
 # cluster_trips end-to-end on a synthetic source dir (exercises main(argv))
 # ---------------------------------------------------------------------------
+
 
 class TestClusterMain:
     def test_main_splits_two_date_ranges(self, tmp_path):
@@ -159,8 +182,18 @@ class TestClusterMain:
                 (src / f"IMG_{y}-{m}-{day}_10-0{i}-00_000.jpg").touch()
         out_json = tmp_path / "trips.json"
         out_md = tmp_path / "trips.md"
-        rc = cluster_trips.main(["--source", str(src), "--out-json", str(out_json),
-                                 "--out-md", str(out_md), "--min-photos", "1"])
+        rc = cluster_trips.main(
+            [
+                "--source",
+                str(src),
+                "--out-json",
+                str(out_json),
+                "--out-md",
+                str(out_md),
+                "--min-photos",
+                "1",
+            ]
+        )
         assert rc is None  # success path returns None
         results = json.loads(out_json.read_text())
         assert len(results) == 2
@@ -172,9 +205,16 @@ class TestClusterMain:
     def test_main_no_photos_returns_1(self, tmp_path):
         src = tmp_path / "empty"
         src.mkdir()
-        rc = cluster_trips.main(["--source", str(src),
-                                 "--out-json", str(tmp_path / "t.json"),
-                                 "--out-md", str(tmp_path / "t.md")])
+        rc = cluster_trips.main(
+            [
+                "--source",
+                str(src),
+                "--out-json",
+                str(tmp_path / "t.json"),
+                "--out-md",
+                str(tmp_path / "t.md"),
+            ]
+        )
         assert rc == 1
 
 
@@ -182,14 +222,19 @@ class TestClusterMain:
 # dHash dedup on synthetic images
 # ---------------------------------------------------------------------------
 
+
 class TestDhash:
     def test_identical_images_hash_equal(self, tmp_path):
         p1, p2 = tmp_path / "a.png", tmp_path / "b.png"
         _pattern_image(p1, 5, 3)
         _pattern_image(p2, 5, 3)
         assert curate_carousel.dhash(str(p1)) == curate_carousel.dhash(str(p2))
-        assert curate_carousel.ham(curate_carousel.dhash(str(p1)),
-                                   curate_carousel.dhash(str(p2))) == 0
+        assert (
+            curate_carousel.ham(
+                curate_carousel.dhash(str(p1)), curate_carousel.dhash(str(p2))
+            )
+            == 0
+        )
 
     def test_different_images_hash_differ(self, tmp_path):
         p1, p2 = tmp_path / "a.png", tmp_path / "b.png"
@@ -207,17 +252,29 @@ class TestDhash:
 
 class TestDedup:
     def _cand(self, path, dt):
-        return {"fn": path.name, "path": str(path), "dt": dt, "gps": None,
-                "bytes": path.stat().st_size}
+        return {
+            "fn": path.name,
+            "path": str(path),
+            "dt": dt,
+            "gps": None,
+            "bytes": path.stat().st_size,
+        }
 
     def test_dedup_keeps_largest_of_near_duplicates(self, tmp_path):
-        big, small, other = tmp_path / "big.bmp", tmp_path / "small.png", tmp_path / "other.png"
-        _pattern_image(big, 5, 3)     # same pixels as small.png, larger file
+        big, small, other = (
+            tmp_path / "big.bmp",
+            tmp_path / "small.png",
+            tmp_path / "other.png",
+        )
+        _pattern_image(big, 5, 3)  # same pixels as small.png, larger file
         _pattern_image(small, 5, 3)
         _pattern_image(other, 41, 17)  # genuinely different
         base = datetime(2025, 2, 13, 10)
-        cands = [self._cand(big, base), self._cand(small, base + timedelta(minutes=1)),
-                 self._cand(other, base + timedelta(minutes=2))]
+        cands = [
+            self._cand(big, base),
+            self._cand(small, base + timedelta(minutes=1)),
+            self._cand(other, base + timedelta(minutes=2)),
+        ]
         kept = curate_carousel.dedup(cands, threshold=6, out_dir=str(tmp_path))
         kept_names = {c["fn"] for c, _ in kept}
         assert kept_names == {"big.bmp", "other.png"}  # small.png dropped
@@ -229,7 +286,9 @@ class TestDedup:
             _pattern_image(p, a, b)
             paths.append(p)
         base = datetime(2025, 2, 13, 10)
-        cands = [self._cand(p, base + timedelta(minutes=i)) for i, p in enumerate(paths)]
+        cands = [
+            self._cand(p, base + timedelta(minutes=i)) for i, p in enumerate(paths)
+        ]
         kept = curate_carousel.dedup(cands, threshold=6, out_dir=str(tmp_path))
         assert len(kept) == 3
 
@@ -238,17 +297,30 @@ class TestDedup:
 # time-burst sampling
 # ---------------------------------------------------------------------------
 
+
 class TestBursts:
     def _kept(self, dts, hashes):
-        return [({"fn": f"img{i}.jpg", "dt": dt, "path": f"/x/img{i}.jpg",
-                  "gps": None, "bytes": 1000}, h)
-                for i, (dt, h) in enumerate(zip(dts, hashes))]
+        return [
+            (
+                {
+                    "fn": f"img{i}.jpg",
+                    "dt": dt,
+                    "path": f"/x/img{i}.jpg",
+                    "gps": None,
+                    "bytes": 1000,
+                },
+                h,
+            )
+            for i, (dt, h) in enumerate(zip(dts, hashes))
+        ]
 
     def test_gap_splits_bursts(self, tmp_path):
         base = datetime(2025, 2, 13, 10)
         dts = [base + timedelta(minutes=m) for m in (0, 10, 20, 180, 190)]
         kept = self._kept(dts, [0x00, 0xFF, 0x0F, 0x00, 0xFF])
-        chosen = curate_carousel.bursts(kept, gap_min=45, per_burst=4, out_dir=str(tmp_path))
+        chosen = curate_carousel.bursts(
+            kept, gap_min=45, per_burst=4, out_dir=str(tmp_path)
+        )
         # 2 bursts; first burst has 3 frames (all kept, per_burst=4), second has 2
         assert len(chosen) == 5
 
@@ -256,16 +328,20 @@ class TestBursts:
         base = datetime(2025, 2, 13, 10)
         dts = [base + timedelta(minutes=m) for m in (0, 5, 10)]
         kept = self._kept(dts, [0x00, 0x0F, 0xFF])  # 0xFF most different from 0x00
-        chosen = curate_carousel.bursts(kept, gap_min=45, per_burst=2, out_dir=str(tmp_path))
+        chosen = curate_carousel.bursts(
+            kept, gap_min=45, per_burst=2, out_dir=str(tmp_path)
+        )
         assert len(chosen) == 2
-        assert chosen[0][0]["dt"] == dts[0]          # first frame always kept
-        assert chosen[1][1] == 0xFF                  # MMR picks the diverse one
+        assert chosen[0][0]["dt"] == dts[0]  # first frame always kept
+        assert chosen[1][1] == 0xFF  # MMR picks the diverse one
 
     def test_output_sorted_by_datetime(self, tmp_path):
         base = datetime(2025, 2, 13, 10)
         dts = [base + timedelta(minutes=m) for m in (0, 10, 200)]
         kept = self._kept(dts, [0x00, 0xFF, 0x0F])
-        chosen = curate_carousel.bursts(kept, gap_min=45, per_burst=1, out_dir=str(tmp_path))
+        chosen = curate_carousel.bursts(
+            kept, gap_min=45, per_burst=1, out_dir=str(tmp_path)
+        )
         got = [c["dt"] for c, _ in chosen]
         assert got == sorted(got)
 
@@ -273,6 +349,7 @@ class TestBursts:
 # ---------------------------------------------------------------------------
 # scan date filtering (lightweight, no GPS box)
 # ---------------------------------------------------------------------------
+
 
 class TestScan:
     def test_scan_filters_by_date_and_drops_nodateless(self, tmp_path):
@@ -283,7 +360,9 @@ class TestScan:
         (src / "random.jpg").touch()  # no timestamp -> dropped as nodate
         start = datetime(2025, 2, 13)
         end = datetime(2025, 2, 14)
-        cands = curate_carousel.scan(str(src), start, end, box=None, out_dir=str(tmp_path))
+        cands = curate_carousel.scan(
+            str(src), start, end, box=None, out_dir=str(tmp_path)
+        )
         assert [c["fn"] for c in cands] == ["IMG_2025-02-13_10-00-00_000.jpg"]
 
 
@@ -291,11 +370,11 @@ class TestScan:
 # curate_carousel end-to-end funnel on synthetic images (exercises main(argv))
 # ---------------------------------------------------------------------------
 
+
 class TestCurateMain:
     def test_full_funnel(self, tmp_path):
         src = tmp_path / "src"
         src.mkdir()
-        base = datetime(2025, 2, 13, 10)
         for i, (a, b) in enumerate([(5, 3), (41, 17), (7, 29), (13, 53)]):
             p = src / f"IMG_2025-02-13_1{i}-00-00_000.png"
             _pattern_image(p, a, b)

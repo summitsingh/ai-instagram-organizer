@@ -25,6 +25,7 @@ An AI-powered tool that automatically organizes your photos into Instagram-ready
 
 - Auto-enhancement (brightness, contrast, saturation)
 - Multiple format generation (square, story, reel)
+- Real-motion reel assembly from clips (`reels/assemble.py`, needs ffmpeg)
 - HEIC/HEIF to JPEG conversion
 - Multi-platform content (Instagram, TikTok, Twitter, LinkedIn)
 - Analytics and insights with visual charts
@@ -295,15 +296,20 @@ python ai_instagram_organizer.py trip-dump curate --out-dir ./oahu-review \
 Key rules baked in: filename timestamps beat EXIF dates, dHash dedup before any
 vision review (~150 thumbnails max per trip, never the full set), full-resolution
 face checks on finalists, strict no-visible-faces rule, original crops preserved.
-
-For AI coding agents: [`AGENTS.md`](AGENTS.md) is the agent operating guide, and
-[`skills/instagram-trip-dumps/SKILL.md`](skills/instagram-trip-dumps/SKILL.md) is
-an installable skill (works in `~/.claude/skills`, Codex skills dirs, OpenClaw,
-etc.) that teaches an agent to run this workflow conversationally.
+Published posts are tracked in a local SQLite registry (`trip-dump mark-posted`
+registers a bundle; `curate --exclude-posted` never picks a posted photo twice).
 
 ### Use with AI assistants
 
-Install the skill once, then ask your assistant to run the trip-dump workflow:
+Two files make this repo agent-friendly:
+
+- [`AGENTS.md`](AGENTS.md) — the repo operating guide: pipeline overview, example
+  commands, and conventions (read it when an agent lands in this repo).
+- [`skills/instagram-trip-dumps/SKILL.md`](skills/instagram-trip-dumps/SKILL.md) —
+  an installable skill that teaches an agent to run the trip-dump workflow
+  conversationally.
+
+Install the skill once, then ask your assistant to run the workflow:
 
 ```bash
 cp -r skills/instagram-trip-dumps/ ~/.claude/skills/     # Claude Code

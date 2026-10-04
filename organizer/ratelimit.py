@@ -6,6 +6,7 @@ provider subclasses only parameterize what truly differs (limits, backoff
 aggressiveness, adaptive-tuning tiers, per-second tracking, log labels) plus a
 genuinely different ``get_optimal_batch_size`` algorithm each.
 """
+
 import time
 import random
 import threading
@@ -19,10 +20,10 @@ class RateLimiter:
     """Shared rate limiter with circuit breaker and adaptive throttling."""
 
     # -- provider parameterization (overridden by subclasses) --
-    provider_name = ""            # label used in log messages, e.g. "Gemini"
-    config_section = ""           # config.<section> holds the 'performance' overrides
-    guard_config_attr = False     # True: tolerate a config object lacking the section
-    supports_burst_mode = False   # True: read the 'burst_mode' performance flag
+    provider_name = ""  # label used in log messages, e.g. "Gemini"
+    config_section = ""  # config.<section> holds the 'performance' overrides
+    guard_config_attr = False  # True: tolerate a config object lacking the section
+    supports_burst_mode = False  # True: read the 'burst_mode' performance flag
 
     # Default limits (used when the config file does not override them)
     default_max_requests_per_minute = 2000
@@ -62,24 +63,38 @@ class RateLimiter:
         self.config = config
         perf = self._load_perf(config)
 
-        self.max_requests_per_minute = perf.get('max_requests_per_minute', self.default_max_requests_per_minute)
-        self.max_concurrent = perf.get('max_concurrent_requests', self.default_max_concurrent)
-        self.adaptive_rate_limiting = perf.get('adaptive_rate_limiting', self.default_adaptive_rate_limiting)
+        self.max_requests_per_minute = perf.get(
+            "max_requests_per_minute", self.default_max_requests_per_minute
+        )
+        self.max_concurrent = perf.get(
+            "max_concurrent_requests", self.default_max_concurrent
+        )
+        self.adaptive_rate_limiting = perf.get(
+            "adaptive_rate_limiting", self.default_adaptive_rate_limiting
+        )
         if self.supports_burst_mode:
-            self.burst_mode = perf.get('burst_mode', False)
+            self.burst_mode = perf.get("burst_mode", False)
 
         # Circuit breaker configuration
-        cb_config = perf.get('circuit_breaker', {})
-        self.failure_threshold = cb_config.get('failure_threshold', self.default_failure_threshold)
-        self.recovery_timeout = cb_config.get('recovery_timeout', self.default_recovery_timeout)
-        self.half_open_max_calls = cb_config.get('half_open_max_calls', self.default_half_open_max_calls)
+        cb_config = perf.get("circuit_breaker", {})
+        self.failure_threshold = cb_config.get(
+            "failure_threshold", self.default_failure_threshold
+        )
+        self.recovery_timeout = cb_config.get(
+            "recovery_timeout", self.default_recovery_timeout
+        )
+        self.half_open_max_calls = cb_config.get(
+            "half_open_max_calls", self.default_half_open_max_calls
+        )
 
         # Backoff strategy
-        backoff_config = perf.get('backoff_strategy', {})
-        self.initial_delay = backoff_config.get('initial_delay', self.default_initial_delay)
-        self.max_delay = backoff_config.get('max_delay', self.default_max_delay)
-        self.multiplier = backoff_config.get('multiplier', self.default_multiplier)
-        self.jitter = backoff_config.get('jitter', self.default_jitter)
+        backoff_config = perf.get("backoff_strategy", {})
+        self.initial_delay = backoff_config.get(
+            "initial_delay", self.default_initial_delay
+        )
+        self.max_delay = backoff_config.get("max_delay", self.default_max_delay)
+        self.multiplier = backoff_config.get("multiplier", self.default_multiplier)
+        self.jitter = backoff_config.get("jitter", self.default_jitter)
 
         # Rate limiting state
         self.request_times = deque()
@@ -106,7 +121,7 @@ class RateLimiter:
         """Read the provider's 'performance' config section."""
         if self.guard_config_attr and not hasattr(config, self.config_section):
             return {}
-        return getattr(config, self.config_section).get('performance', {})
+        return getattr(config, self.config_section).get("performance", {})
 
     def _tagged(self, message: str) -> str:
         """Prefix a message with the provider name ("Gemini ...") or capitalize it."""
@@ -126,7 +141,9 @@ class RateLimiter:
             # Enforce the per-second limit first when configured (most restrictive)
             if self.max_requests_per_second is not None:
                 # Remove requests older than 1 second
-                while self.requests_this_second and now - self.requests_this_second[0] > 1:
+                while (
+                    self.requests_this_second and now - self.requests_this_second[0] > 1
+                ):
                     self.requests_this_second.popleft()
 
                 if len(self.requests_this_second) >= self.max_requests_per_second:
@@ -144,7 +161,9 @@ class RateLimiter:
 
             # Check per-second limit first when configured
             if self.max_requests_per_second is not None:
-                while self.requests_this_second and now - self.requests_this_second[0] > 1:
+                while (
+                    self.requests_this_second and now - self.requests_this_second[0] > 1
+                ):
                     self.requests_this_second.popleft()
 
                 if len(self.requests_this_second) >= self.max_requests_per_second:
@@ -172,10 +191,16 @@ class RateLimiter:
         if self.is_circuit_open():
             wait_time = self.recovery_timeout - (time.time() - self.last_failure_time)
             if wait_time > 0:
-                logger.info(self._tagged(f"circuit breaker OPEN - waiting {wait_time:.1f}s for recovery"))
+                logger.info(
+                    self._tagged(
+                        f"circuit breaker OPEN - waiting {wait_time:.1f}s for recovery"
+                    )
+                )
                 time.sleep(wait_time)
             if self.is_circuit_open():
-                raise Exception(self._tagged("circuit breaker is OPEN - API unavailable"))
+                raise Exception(
+                    self._tagged("circuit breaker is OPEN - API unavailable")
+                )
 
         # Apply backoff delay
         if self.failure_count > self.backoff_failure_threshold:
@@ -230,7 +255,9 @@ class RateLimiter:
 
                     for threshold, floor, factor in self.adaptive_reduce_tiers:
                         if error_rate > threshold:
-                            self.throttle_factor = max(floor, self.throttle_factor * factor)
+                            self.throttle_factor = max(
+                                floor, self.throttle_factor * factor
+                            )
                             break
                     else:
                         if error_rate < self.adaptive_recover_below:
@@ -243,7 +270,9 @@ class RateLimiter:
 
     def get_optimal_batch_size(self) -> int:
         """Get optimal batch size based on current performance"""
-        raise NotImplementedError("provider subclasses implement their own batch sizing")
+        raise NotImplementedError(
+            "provider subclasses implement their own batch sizing"
+        )
 
     def is_circuit_open(self) -> bool:
         """Check if circuit breaker is open"""
@@ -252,7 +281,9 @@ class RateLimiter:
                 if time.time() - self.last_failure_time > self.recovery_timeout:
                     self.circuit_state = "HALF_OPEN"
                     self.half_open_calls = 0
-                    logger.info(self._tagged("circuit breaker transitioning to HALF_OPEN state"))
+                    logger.info(
+                        self._tagged("circuit breaker transitioning to HALF_OPEN state")
+                    )
                     return False
                 return True
             return False
@@ -270,7 +301,9 @@ class RateLimiter:
             elif self.circuit_state == "CLOSED":
                 if self.failure_count > 0:
                     self.failure_count = max(0, self.failure_count - 1)
-                    self.current_delay = max(self.initial_delay, self.current_delay / self.multiplier)
+                    self.current_delay = max(
+                        self.initial_delay, self.current_delay / self.multiplier
+                    )
 
     def record_failure(self):
         """Record a failed API call"""
@@ -278,14 +311,20 @@ class RateLimiter:
             self.failure_count += 1
             self.last_failure_time = time.time()
 
-            self.current_delay = min(self.max_delay, self.current_delay * self.multiplier)
+            self.current_delay = min(
+                self.max_delay, self.current_delay * self.multiplier
+            )
 
             if self.circuit_state == "HALF_OPEN":
                 self.circuit_state = "OPEN"
                 logger.warning(self._tagged("circuit breaker OPEN - API still failing"))
             elif self.failure_count >= self.failure_threshold:
                 self.circuit_state = "OPEN"
-                logger.warning(self._tagged(f"circuit breaker OPEN - {self.failure_count} consecutive failures"))
+                logger.warning(
+                    self._tagged(
+                        f"circuit breaker OPEN - {self.failure_count} consecutive failures"
+                    )
+                )
 
     def get_backoff_delay(self) -> float:
         """Get current backoff delay with jitter"""
@@ -370,7 +409,9 @@ class LlamaRateLimiter(RateLimiter):
 
     def get_optimal_batch_size(self) -> int:
         """Get optimal batch size based on current performance"""
-        base_batch_size = self.config.llama.get('performance', {}).get('optimal_batch_size', 2)
+        base_batch_size = self.config.llama.get("performance", {}).get(
+            "optimal_batch_size", 2
+        )
 
         if self.adaptive_rate_limiting:
             # Reduce batch size if we're having errors or circuit is open

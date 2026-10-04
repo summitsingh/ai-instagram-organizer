@@ -21,4 +21,21 @@ jobs:
         # ONLY the offline unit tests run in CI. The legacy live-API scripts
         # in tests/ (test_gemini_*, test_llama_*, test_multi_provider, ...)
         # need real API keys and are never executed here.
-        run: pytest tests/test_offline_tripdumps.py tests/test_offline_core.py -v
+        run: pytest tests/test_offline_tripdumps.py tests/test_offline_core.py tests/test_offline_registry.py tests/test_offline_reels.py -v
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install linters
+        run: pip install ruff black
+      - name: ruff check
+        # Scoped to the modernized code; legacy provider scripts predate the
+        # lint setup and are cleaned up incrementally.
+        run: ruff check trip_dumps organizer reels tests/test_offline_tripdumps.py tests/test_offline_core.py tests/test_offline_registry.py tests/test_offline_reels.py
+      - name: black --check
+        run: black --check trip_dumps organizer reels tests/test_offline_tripdumps.py tests/test_offline_core.py tests/test_offline_registry.py tests/test_offline_reels.py

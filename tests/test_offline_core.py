@@ -7,6 +7,7 @@
   get_backoff_delay, record_success/record_failure, is_circuit_open);
   acquire() is deliberately never called.
 """
+
 import sys
 import time
 from pathlib import Path
@@ -25,6 +26,7 @@ def _bare_config():
 # ---------------------------------------------------------------------------
 # Config._deep_update
 # ---------------------------------------------------------------------------
+
 
 class TestDeepUpdate:
     def test_nested_merge_keeps_untouched_keys(self):
@@ -62,10 +64,12 @@ class TestDeepUpdate:
 # RateLimiter base
 # ---------------------------------------------------------------------------
 
+
 class _TestLimiter(RateLimiter):
     """Concrete subclass of the shared base for testing."""
+
     provider_name = "Test"
-    config_section = "llama"      # Config always has self.llama
+    config_section = "llama"  # Config always has self.llama
     guard_config_attr = True
     default_max_requests_per_minute = 10
     default_max_concurrent = 2
@@ -96,6 +100,7 @@ class TestRateLimiterConstruction:
 
     def test_base_get_optimal_batch_size_not_implemented(self):
         import pytest
+
         with pytest.raises(NotImplementedError):
             _limiter().get_optimal_batch_size()
 

@@ -3,3 +3,15 @@
 # NOT collected here; CI runs the offline files explicitly.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.black]
+line-length = 88
+
+[tool.ruff.lint]
+# Pinned to ruff's classic default set: syntax errors, pyflakes, and the
+# pycodestyle error subsets. Keeps the CI gate stable across ruff versions
+# without forcing style churn on pre-existing code.
+select = ["E4", "E7", "E9", "F"]

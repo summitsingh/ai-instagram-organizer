@@ -16,6 +16,7 @@ Output: trip_clusters.json plus a markdown report (trip-candidates style).
 Dependencies: stdlib only, plus Pillow (for EXIF GPS; graceful degrade without
 it) and requests (only needed for --geocode).
 """
+
 import argparse
 import json
 import math
@@ -28,6 +29,7 @@ from datetime import datetime, timedelta
 try:
     from PIL import Image
     from PIL.ExifTags import IFD
+
     HAVE_PIL = True
 except ImportError:
     HAVE_PIL = False
@@ -74,8 +76,8 @@ def pil_gps(path):
             lon_v, lon_r = gps.get(4), gps.get(3)
             if lat_v is None or lon_v is None:
                 return None
-            lat = sum(_rational_to_float(x) / (60 ** i) for i, x in enumerate(lat_v))
-            lon = sum(_rational_to_float(x) / (60 ** i) for i, x in enumerate(lon_v))
+            lat = sum(_rational_to_float(x) / (60**i) for i, x in enumerate(lat_v))
+            lon = sum(_rational_to_float(x) / (60**i) for i, x in enumerate(lon_v))
             if str(lat_r) == "S":
                 lat = -lat
             if str(lon_r) == "W":
@@ -108,14 +110,17 @@ def pil_exif_dt(path):
 def haversine_km(a, b):
     lat1, lon1, lat2, lon2 = map(math.radians, (a[0], a[1], b[0], b[1]))
     dlat, dlon = lat2 - lat1, lon2 - lon1
-    h = (math.sin(dlat / 2) ** 2
-         + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2)
+    h = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    )
     return 2 * 6371 * math.asin(math.sqrt(h))
 
 
 def geocode(lat, lon, user_agent):
     """Reverse-geocode one centroid. Nominatim: ~1 req/sec, real User-Agent."""
     import requests
+
     try:
         r = requests.get(
             "https://nominatim.openstreetmap.org/reverse",
@@ -125,15 +130,27 @@ def geocode(lat, lon, user_agent):
         )
         r.raise_for_status()
         addr = r.json().get("address", {})
-        city = (addr.get("city") or addr.get("town") or addr.get("village")
-                or addr.get("county"))
+        city = (
+            addr.get("city")
+            or addr.get("town")
+            or addr.get("village")
+            or addr.get("county")
+        )
         state = addr.get("state")
         country = addr.get("country")
-        return {"city": city, "state": state, "country": country,
-                "label": ", ".join(x for x in (city, state, country) if x)}
+        return {
+            "city": city,
+            "state": state,
+            "country": country,
+            "label": ", ".join(x for x in (city, state, country) if x),
+        }
     except Exception as e:
-        return {"city": None, "state": None, "country": None,
-                "label": f"geocode failed: {e}"}
+        return {
+            "city": None,
+            "state": None,
+            "country": None,
+            "label": f"geocode failed: {e}",
+        }
 
 
 def iter_photos(source):
@@ -184,12 +201,18 @@ def geo_split_trips(clusters, geo_split_km):
             prev = cur_sub[-1]
             split = False
             if prev["lat"] is not None and it["lat"] is not None:
-                if haversine_km((prev["lat"], prev["lon"]),
-                                (it["lat"], it["lon"])) > geo_split_km:
-                    nxt = next((c for c in cl[i + 2:] if c["lat"] is not None), None)
-                    if nxt is None or haversine_km(
-                            (prev["lat"], prev["lon"]),
-                            (nxt["lat"], nxt["lon"])) > geo_split_km:
+                if (
+                    haversine_km((prev["lat"], prev["lon"]), (it["lat"], it["lon"]))
+                    > geo_split_km
+                ):
+                    nxt = next((c for c in cl[i + 2 :] if c["lat"] is not None), None)
+                    if (
+                        nxt is None
+                        or haversine_km(
+                            (prev["lat"], prev["lon"]), (nxt["lat"], nxt["lon"])
+                        )
+                        > geo_split_km
+                    ):
                         split = True
             if split:
                 sub.append(cur_sub)
@@ -207,18 +230,39 @@ def main(argv=None):
     ap.add_argument("--source", required=True, help="photo directory tree")
     ap.add_argument("--out-json", default="trip_clusters.json")
     ap.add_argument("--out-md", default="trip-candidates.md")
-    ap.add_argument("--gap-days", type=float, default=3.0,
-                    help="photo gap that starts a new trip (default 3)")
-    ap.add_argument("--geo-split-km", type=float, default=150.0,
-                    help="sustained location jump that splits a trip (default 150)")
-    ap.add_argument("--gps-box", default=None,
-                    help="optional lat0,lat1,lon0,lon1 box to pre-isolate a region")
-    ap.add_argument("--geocode", action="store_true",
-                    help="reverse-geocode one centroid per trip (Nominatim)")
-    ap.add_argument("--user-agent", default="ai-instagram-organizer/1.0",
-                    help="User-Agent for Nominatim (include contact)")
-    ap.add_argument("--min-photos", type=int, default=1,
-                    help="drop clusters smaller than this from the report")
+    ap.add_argument(
+        "--gap-days",
+        type=float,
+        default=3.0,
+        help="photo gap that starts a new trip (default 3)",
+    )
+    ap.add_argument(
+        "--geo-split-km",
+        type=float,
+        default=150.0,
+        help="sustained location jump that splits a trip (default 150)",
+    )
+    ap.add_argument(
+        "--gps-box",
+        default=None,
+        help="optional lat0,lat1,lon0,lon1 box to pre-isolate a region",
+    )
+    ap.add_argument(
+        "--geocode",
+        action="store_true",
+        help="reverse-geocode one centroid per trip (Nominatim)",
+    )
+    ap.add_argument(
+        "--user-agent",
+        default="ai-instagram-organizer/1.0",
+        help="User-Agent for Nominatim (include contact)",
+    )
+    ap.add_argument(
+        "--min-photos",
+        type=int,
+        default=1,
+        help="drop clusters smaller than this from the report",
+    )
     args = ap.parse_args(argv)
 
     box = parse_box(args.gps_box) if args.gps_box else None
@@ -236,9 +280,15 @@ def main(argv=None):
             lat0, lat1, lon0, lon1 = box
             if not (lat0 <= latlon[0] <= lat1 and lon0 <= latlon[1] <= lon1):
                 continue
-        items.append({"path": path, "file": fn, "dt": dt,
-                      "lat": latlon[0] if latlon else None,
-                      "lon": latlon[1] if latlon else None})
+        items.append(
+            {
+                "path": path,
+                "file": fn,
+                "dt": dt,
+                "lat": latlon[0] if latlon else None,
+                "lon": latlon[1] if latlon else None,
+            }
+        )
 
     if not items:
         print("no photos found", file=sys.stderr)
@@ -256,28 +306,38 @@ def main(argv=None):
         if len(t) < args.min_photos:
             continue
         gps = [(x["lat"], x["lon"]) for x in t if x["lat"] is not None]
-        centroid = ((sum(g[0] for g in gps) / len(gps),
-                     sum(g[1] for g in gps) / len(gps)) if gps else (None, None))
+        centroid = (
+            (sum(g[0] for g in gps) / len(gps), sum(g[1] for g in gps) / len(gps))
+            if gps
+            else (None, None)
+        )
         geo = None
         if args.geocode and centroid[0] is not None:
             geo = geocode(*centroid, args.user_agent)
             time.sleep(1.1)  # Nominatim rate limit
         n = len(t)
-        results.append({
-            "trip": len(results) + 1,
-            "start": t[0]["dt"].strftime("%Y-%m-%d"),
-            "end": t[-1]["dt"].strftime("%Y-%m-%d"),
-            "count": n,
-            "gps_coverage": len(gps),
-            "centroid": [round(c, 4) if c is not None else None for c in centroid],
-            "geo": geo,
-            "samples": ([x["file"] for x in t[:3]]
-                        + ([t[n // 2]["file"]] if n > 4 else [])
-                        + ([t[-1]["file"]] if n > 1 else [])),
-        })
+        results.append(
+            {
+                "trip": len(results) + 1,
+                "start": t[0]["dt"].strftime("%Y-%m-%d"),
+                "end": t[-1]["dt"].strftime("%Y-%m-%d"),
+                "count": n,
+                "gps_coverage": len(gps),
+                "centroid": [round(c, 4) if c is not None else None for c in centroid],
+                "geo": geo,
+                "samples": (
+                    [x["file"] for x in t[:3]]
+                    + ([t[n // 2]["file"]] if n > 4 else [])
+                    + ([t[-1]["file"]] if n > 1 else [])
+                ),
+            }
+        )
         label = geo["label"] if geo else "no-gps"
-        print(f"trip {results[-1]['trip']}: {results[-1]['start']}.."
-              f"{results[-1]['end']} n={n} gps={len(gps)} {label}", flush=True)
+        print(
+            f"trip {results[-1]['trip']}: {results[-1]['start']}.."
+            f"{results[-1]['end']} n={n} gps={len(gps)} {label}",
+            flush=True,
+        )
 
     with open(args.out_json, "w") as f:
         json.dump(results, f, indent=1)
@@ -289,12 +349,16 @@ def main(argv=None):
         f.write("|---|------|-------|--------|-----|\n")
         for r in results:
             label = r["geo"]["label"] if r["geo"] else "no-gps"
-            f.write(f"| {r['trip']} | {label} | {r['start']}..{r['end']} "
-                    f"| {r['count']} | {r['gps_coverage']} |\n")
+            f.write(
+                f"| {r['trip']} | {label} | {r['start']}..{r['end']} "
+                f"| {r['count']} | {r['gps_coverage']} |\n"
+            )
         f.write("\n## Details\n\n")
         for r in results:
-            f.write(f"### {r['trip']}. {r['geo']['label'] if r['geo'] else 'no-gps'} "
-                    f"- {r['start']}..{r['end']} ({r['count']} photos)\n")
+            f.write(
+                f"### {r['trip']}. {r['geo']['label'] if r['geo'] else 'no-gps'} "
+                f"- {r['start']}..{r['end']} ({r['count']} photos)\n"
+            )
             for s in r["samples"]:
                 f.write(f"- `{s}`\n")
             f.write("\n")

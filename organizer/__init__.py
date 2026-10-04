@@ -31,8 +31,6 @@ from .common import (
     auto_enhance_image,
     HashtagOptimizer,
     create_platform_variants,
-    _analysis_cache,
-    _cache_lock,
 )
 from .config import Config
 from .ratelimit import RateLimiter, GeminiRateLimiter, LlamaRateLimiter

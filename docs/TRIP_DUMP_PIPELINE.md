@@ -144,8 +144,28 @@ options/oahu/
 - No hashtags. Location tag set to the trip location.
 - Keywords go in per-slide alt text, not the caption.
 
-## Stage 3: Recut workflow
+### Never-posted-twice registry
 
+Standing rule: only original, never-posted photos go out. Enforced, not just
+remembered, with a local SQLite registry keyed by dHash
+(`trip_dumps/posted_registry.py`):
+
+```bash
+# after a draft bundle is published, register every slide:
+python -m trip_dumps mark-posted --draft-dir ./options/oahu \
+    --post-url https://www.instagram.com/p/XXXX/
+
+# curate while skipping anything already posted:
+python trip_dumps/curate_carousel.py --source ~/photos --out-dir ./review \
+    --exclude-posted
+```
+
+The DB lives at `~/.ai-instagram-organizer/posted.db` (user-level, never in the
+repo); override per-run with `--registry`. Hashes are perceptual, so a photo
+can never slip back in under a new filename. First registration wins: re-runs
+are idempotent.
+
+## Stage 3: Recut workflow
 Creative direction changes after the first draft ("keep it aesthetic, nature only:
 sunset, sunrise, beach, food, whales, water"). The recut is mechanical:
 

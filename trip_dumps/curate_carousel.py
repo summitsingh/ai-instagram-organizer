@@ -22,6 +22,7 @@ Usage:
   python curate_carousel.py --assemble "12,11,33,48,10" --out-dir ./oahu-review \\
       --draft-dir ./options/oahu
 """
+
 import argparse
 import json
 import math
@@ -34,6 +35,7 @@ from PIL import Image, ImageDraw
 
 try:
     import pillow_heif
+
     pillow_heif.register_heif_opener()
 except ImportError:
     pass
@@ -78,6 +80,7 @@ def gps_of(path):
                 return None
             try:
                 from PIL.ExifTags import IFD
+
                 gps = exif.get_ifd(IFD.GPSInfo)
             except Exception:
                 return None
@@ -87,8 +90,8 @@ def gps_of(path):
             lon_v, lon_r = gps.get(4), gps.get(3)
             if lat_v is None or lon_v is None:
                 return None
-            lat = sum(_rat(x) / (60 ** i) for i, x in enumerate(lat_v))
-            lon = sum(_rat(x) / (60 ** i) for i, x in enumerate(lon_v))
+            lat = sum(_rat(x) / (60**i) for i, x in enumerate(lat_v))
+            lon = sum(_rat(x) / (60**i) for i, x in enumerate(lon_v))
             if str(lat_r) == "S":
                 lat = -lat
             if str(lon_r) == "W":
@@ -102,13 +105,17 @@ def dhash(path, size=8):
     """8x8 difference hash as int."""
     with Image.open(path) as im:
         g = im.convert("L").resize((size + 1, size), Image.BILINEAR)
-        px = list(g.get_flattened_data()) if hasattr(g, "get_flattened_data") \
-            else list(g.getdata())  # Pillow < 13 compat
+        px = (
+            list(g.get_flattened_data())
+            if hasattr(g, "get_flattened_data")
+            else list(g.getdata())
+        )  # Pillow < 13 compat
     bits = 0
     for r in range(size):
         for c in range(size):
             bits = (bits << 1) | (
-                1 if px[r * (size + 1) + c] > px[r * (size + 1) + c + 1] else 0)
+                1 if px[r * (size + 1) + c] > px[r * (size + 1) + c + 1] else 0
+            )
     return bits
 
 
@@ -141,8 +148,15 @@ def scan(source, start, end, box, out_dir):
                 elif not (lat0 <= gps[0] <= lat1 and lon0 <= gps[1] <= lon1):
                     dropped["gps_out"] += 1
                     continue
-            cands.append({"fn": fn, "path": path, "dt": dt, "gps": gps,
-                          "bytes": os.path.getsize(path)})
+            cands.append(
+                {
+                    "fn": fn,
+                    "path": path,
+                    "dt": dt,
+                    "gps": gps,
+                    "bytes": os.path.getsize(path),
+                }
+            )
     log(out_dir, f"SCAN candidates={len(cands)} dropped={dropped}")
     return cands
 
@@ -199,11 +213,20 @@ def thumbnails(chosen, out_dir, thumb_size):
             with Image.open(c["path"]) as im:
                 im.thumbnail((thumb_size, thumb_size), Image.LANCZOS)
                 im.convert("RGB").save(os.path.join(th, f"{i:04d}.jpg"), quality=80)
-            manifest.append({
-                "idx": i, "file": c["fn"], "path": c["path"],
-                "dt": c["dt"].strftime("%Y-%m-%d %H:%M"),
-                "gps": [round(c["gps"][0], 4), round(c["gps"][1], 4)] if c["gps"] else None,
-                "bytes": c["bytes"]})
+            manifest.append(
+                {
+                    "idx": i,
+                    "file": c["fn"],
+                    "path": c["path"],
+                    "dt": c["dt"].strftime("%Y-%m-%d %H:%M"),
+                    "gps": (
+                        [round(c["gps"][0], 4), round(c["gps"][1], 4)]
+                        if c["gps"]
+                        else None
+                    ),
+                    "bytes": c["bytes"],
+                }
+            )
         except Exception as e:
             log(out_dir, "  thumb fail", c["fn"], str(e)[:80])
     with open(os.path.join(out_dir, "manifest.json"), "w") as f:
@@ -221,7 +244,7 @@ def contact_sheets(out_dir, cols=5, rows=4):
     cell = 320
     made = 0
     for p in range(math.ceil(len(files) / per)):
-        page = files[p * per:(p + 1) * per]
+        page = files[p * per : (p + 1) * per]
         sheet = Image.new("RGB", (cols * cell, rows * (cell + 28)), "white")
         d = ImageDraw.Draw(sheet)
         for i, fp in enumerate(page):
@@ -238,8 +261,10 @@ def contact_sheets(out_dir, cols=5, rows=4):
         sheet.save(out, quality=82)
         made += 1
     log(out_dir, f"SHEETS_DONE n={made} ({cols}x{rows}, {per}/sheet)")
-    print(f"Review the sheets in {out_dir}/sheet_*.jpg, note finalist indexes, "
-          f"then run with --assemble \"idx,idx,...\"")
+    print(
+        f"Review the sheets in {out_dir}/sheet_*.jpg, note finalist indexes, "
+        f'then run with --assemble "idx,idx,..."'
+    )
 
 
 def assemble(out_dir, order, draft_dir, quality=93):
@@ -249,8 +274,9 @@ def assemble(out_dir, order, draft_dir, quality=93):
     IMPORTANT: view every finalist at FULL resolution before assembling -
     thumbnails hide faces.
     """
-    manifest = {m["idx"]: m for m in
-                json.load(open(os.path.join(out_dir, "manifest.json")))}
+    manifest = {
+        m["idx"]: m for m in json.load(open(os.path.join(out_dir, "manifest.json")))
+    }
     os.makedirs(draft_dir, exist_ok=True)
     idxs = [int(x.strip()) for x in order.split(",") if x.strip() != ""]
     for n, idx in enumerate(idxs, 1):
@@ -260,8 +286,9 @@ def assemble(out_dir, order, draft_dir, quality=93):
             continue
         with Image.open(m["path"]) as im:
             w, h = im.size
-            im.convert("RGB").save(os.path.join(draft_dir, f"{n:02d}.jpg"),
-                                   quality=quality)
+            im.convert("RGB").save(
+                os.path.join(draft_dir, f"{n:02d}.jpg"), quality=quality
+            )
         print(f"  {n:02d}.jpg <- idx{idx:04d} {m['file']} {w}x{h}")
     print(f"draft bundle in {draft_dir} ({len(idxs)} slides)")
 
@@ -286,11 +313,26 @@ def main(argv=None):
     ap.add_argument("--thumb-size", type=int, default=420)
     ap.add_argument("--sheet-cols", type=int, default=5)
     ap.add_argument("--sheet-rows", type=int, default=4)
-    ap.add_argument("--assemble", metavar="IDXS",
-                    help='comma-separated manifest indexes, e.g. "12,11,33"')
+    ap.add_argument(
+        "--assemble",
+        metavar="IDXS",
+        help='comma-separated manifest indexes, e.g. "12,11,33"',
+    )
     ap.add_argument("--draft-dir", help="output dir for --assemble")
-    ap.add_argument("--quality", type=int, default=93,
-                    help="JPEG quality for assembled slides")
+    ap.add_argument(
+        "--quality", type=int, default=93, help="JPEG quality for assembled slides"
+    )
+    ap.add_argument(
+        "--exclude-posted",
+        action="store_true",
+        help="skip candidates already in the posted registry "
+        "(never-posted-twice rule)",
+    )
+    ap.add_argument(
+        "--registry",
+        help="posted-registry DB path (default: "
+        "~/.ai-instagram-organizer/posted.db)",
+    )
     args = ap.parse_args(argv)
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -309,6 +351,35 @@ def main(argv=None):
 
     cands = scan(args.source, start, end, box, args.out_dir)
     kept = dedup(cands, args.dhash_threshold, args.out_dir)
+    if args.exclude_posted:
+        # kept holds (candidate, dhash_int) pairs; the registry keys on hex.
+        # Dual-mode import: package (`python -m trip_dumps curate`) or direct
+        # script (`python trip_dumps/curate_carousel.py`).
+        try:
+            from .posted_registry import (
+                db_exists,
+                default_db_path,
+                filter_unposted,
+            )
+        except ImportError:
+            from posted_registry import (
+                db_exists,
+                default_db_path,
+                filter_unposted,
+            )
+
+        reg = args.registry or default_db_path()
+        if db_exists(reg):
+            pairs = [(c, f"{h:016x}") for c, h in kept]
+            kept_hex = filter_unposted(pairs, reg)
+            log(
+                args.out_dir,
+                f"EXCLUDE_POSTED skipped={len(kept) - len(kept_hex)} "
+                f"registry={reg}",
+            )
+            kept = [(c, int(hx, 16)) for c, hx in kept_hex]
+        else:
+            log(args.out_dir, f"EXCLUDE_POSTED no registry at {reg}, nothing excluded")
     chosen = bursts(kept, args.burst_gap_min, args.per_burst, args.out_dir)
     thumbnails(chosen, args.out_dir, args.thumb_size)
     contact_sheets(args.out_dir, args.sheet_cols, args.sheet_rows)
