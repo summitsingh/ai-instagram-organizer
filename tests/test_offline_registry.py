@@ -48,6 +48,19 @@ def _db(tmp_path):
     return str(tmp_path / "posted.db")
 
 
+def test_mark_draft_dir_skips_non_slide_images(tmp_path):
+    draft = tmp_path / "draft"
+    draft.mkdir()
+    _pattern_image(draft / "01.jpg", 3, 7)
+    _pattern_image(draft / "02.jpg", 11, 29)
+    _pattern_image(draft / "preview_x.jpg", 5, 13)
+    _pattern_image(draft / "contact.png", 7, 19)
+    (draft / "notes.txt").write_text("synthetic draft")
+    added, total = mark_draft_dir(_db(tmp_path), draft)
+    assert (added, total) == (2, 2)
+    assert count(_db(tmp_path)) == 2
+
+
 # ---------------------------------------------------------------------------
 # hashing
 # ---------------------------------------------------------------------------
