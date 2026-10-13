@@ -11,6 +11,8 @@ HEIC/PNG rarely hash bit-identically.
 
 Default database: ``~/.ai-instagram-organizer/posted.db`` (user-level, never
 committed to the repo). Override with ``--registry``.
+Draft registration reads only two-digit numbered slides such as ``01.jpg``;
+previews and contact sheets are skipped.
 
 Usage:
     # after publishing a draft bundle:
@@ -23,12 +25,14 @@ Usage:
 """
 
 import argparse
+import logging
 import os
+import re
 import sqlite3
 import sys
 from datetime import datetime, timezone
 
-EXTS = (".jpg", ".jpeg", ".png", ".webp")
+SLIDE_NAME = re.compile(r"^\d{2}\.(?:jpg|jpeg|png|webp)$", re.IGNORECASE)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS posted (
@@ -166,14 +170,17 @@ def filter_unposted(pairs, db_path=None, threshold=6):
 
 
 def mark_draft_dir(db_path, draft_dir, post_url=None, post_id=None):
-    """Register every image in a draft bundle dir (options/<trip>/) as posted.
+    """Register only numbered slides (01.jpg through NN.jpg, etc.) as posted.
     Returns (newly_added, total)."""
     try:
-        names = sorted(
-            fn
-            for fn in os.listdir(draft_dir)
-            if fn.lower().endswith(EXTS) and os.path.isfile(os.path.join(draft_dir, fn))
-        )
+        names = []
+        for fn in sorted(os.listdir(draft_dir)):
+            if not os.path.isfile(os.path.join(draft_dir, fn)):
+                continue
+            if SLIDE_NAME.fullmatch(fn):
+                names.append(fn)
+            elif fn.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                logging.info("skipping non-slide image: %s", fn)
     except FileNotFoundError:
         raise SystemExit(f"draft dir not found: {draft_dir}")
     added = 0
