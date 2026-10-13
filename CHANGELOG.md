@@ -12,6 +12,8 @@ All notable changes to this project are documented here. Format follows
   and `trip-dump` console commands for pip installs.
 
 ### Fixed
+- Fast-curate assembly now records source-file dHashes; `mark-posted` registers
+  them alongside slide hashes to catch crop versus original reposts.
 - `mark-posted` now registers only numbered draft slides, skipping previews and
   contact sheets.
 

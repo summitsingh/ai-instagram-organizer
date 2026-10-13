@@ -38,6 +38,9 @@ trip-dump fast-curate --out-dir ./review --assemble "3,7,12" \
 ```
 
 Assembly creates numbered 1080x1350 slides, `preview.jpg`, and `ASSEMBLY.json`.
+The assembly manifest records each source original's dHash. After publishing,
+`mark-posted` registers both slide and source hashes, so a center crop cannot
+hide a previously posted original from `--exclude-posted`.
 The agent still checks thumbnails for profile or obscured faces that the Haar
 cascade may miss. If OpenCV is unavailable, `--no-face-check` allows screening,
 marks face status null, and makes visual face review essential. Caption,

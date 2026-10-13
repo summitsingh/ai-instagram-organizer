@@ -20,7 +20,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageOps, ImageStat
 
 from .curate_carousel import EXTS, dhash, fname_dt, ham
-from .posted_registry import _stored_hash_ints, default_db_path
+from .posted_registry import _stored_hash_ints, default_db_path, dhash_of
 
 # Screening limits: low edge energy is soft; clipping above 25% is rejected.
 SHARP_MIN = 2.0
@@ -246,7 +246,12 @@ def assemble(args):
         sheet.paste(small, (x, y + 30))
         draw.text((x + 5, y + 5), f"{number:02d}", fill="black")
         mapping.append(
-            {"slide": number, "manifest_index": index, "source_path": source}
+            {
+                "slide": number,
+                "manifest_index": index,
+                "source_path": source,
+                "source_dhash": choices[index].get("dhash") or dhash_of(source),
+            }
         )
     sheet.save(draft / "preview.jpg", quality=85)
     write_json(draft / "ASSEMBLY.json", {"slides": mapping})

@@ -25,6 +25,7 @@ Usage:
 """
 
 import argparse
+import json
 import logging
 import os
 import re
@@ -170,7 +171,7 @@ def filter_unposted(pairs, db_path=None, threshold=6):
 
 
 def mark_draft_dir(db_path, draft_dir, post_url=None, post_id=None):
-    """Register only numbered slides (01.jpg through NN.jpg, etc.) as posted.
+    """Register numbered slides and assembly source hashes as posted.
     Returns (newly_added, total)."""
     try:
         names = []
@@ -193,7 +194,35 @@ def mark_draft_dir(db_path, draft_dir, post_url=None, post_id=None):
             source_file=fn,
         ):
             added += 1
-    return added, len(names)
+    total = len(names)
+    assembly_path = os.path.join(draft_dir, "ASSEMBLY.json")
+    if os.path.isfile(assembly_path):
+        try:
+            with open(assembly_path) as assembly_file:
+                entries = json.load(assembly_file)["slides"]
+            if not isinstance(entries, list) or any(
+                not isinstance(entry, dict)
+                or not isinstance(entry.get("source_dhash"), str)
+                or not re.fullmatch(r"[0-9a-fA-F]{16}", entry["source_dhash"])
+                or not isinstance(entry.get("slide"), int)
+                for entry in entries
+            ):
+                raise ValueError("invalid slides")
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            logging.info("ignoring malformed ASSEMBLY.json: %s", exc)
+        else:
+            for entry in entries:
+                total += 1
+                if mark_posted(
+                    db_path,
+                    dhash_hex=entry["source_dhash"],
+                    post_url=post_url,
+                    post_id=post_id,
+                    source_file=entry.get("source_path"),
+                    note=f"source original of slide {entry['slide']:02d}",
+                ):
+                    added += 1
+    return added, total
 
 
 def count(db_path=None):
