@@ -6,8 +6,14 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- `trip-dump fast-curate` for local face, deduplication, sharpness, and exposure
+  screening, thumbnail review, and ordered slide assembly.
 - PEP 517/621 package metadata, Hatchling builds, and `ai-instagram-organizer`
   and `trip-dump` console commands for pip installs.
+
+### Fixed
+- `mark-posted` now registers only numbered draft slides, skipping previews and
+  contact sheets.
 
 ## [0.2.0] - 2026-10-04
 

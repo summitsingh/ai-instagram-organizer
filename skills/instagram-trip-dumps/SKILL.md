@@ -9,6 +9,11 @@ You turn a big unsorted photo library into reviewable Instagram carousel drafts,
 one per trip. The workflow is a cheap-local-first funnel: only ~150 thumbnails
 per trip ever reach vision review, never the full photo set.
 
+When token efficiency matters, prefer `trip-dump fast-curate`: it screens faces,
+duplicates, sharpness, and exposure locally, then presents small thumbnails and
+manifest scores. View only those thumbnails, select indices, and assemble the
+chosen originals. See `docs/TRIP_DUMP_PIPELINE.md` for the two-phase workflow.
+
 The repo this skill ships with provides the tooling:
 - `trip_dumps/cluster_trips.py` - cluster photos into trips by capture date + GPS
 - `trip_dumps/curate_carousel.py` - dHash dedup, time-burst sampling, contact

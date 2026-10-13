@@ -10,6 +10,40 @@ on ~150 thumbnails per trip, after a cheap local funnel has discarded the rest.
 
 Scripts: `trip_dumps/cluster_trips.py` (stage 1), `trip_dumps/curate_carousel.py` (stage 2).
 
+## Fast curation (token-efficient)
+
+Opening every candidate at full resolution can consume thousands of agent tokens
+per image and roughly 40 minutes for a carousel. `trip-dump fast-curate` runs
+face detection, posted and baseline deduplication, sharpness, and exposure
+screening locally, then gives the agent thumbnails around 400 pixels. This
+can reduce review to minutes and a fraction of the tokens.
+
+Run screening on the trip directory. Dates come from filename capture timestamps.
+The optional baseline is a directory of existing numbered draft slides. The
+posted registry is consulted only with `--exclude-posted`.
+
+```bash
+trip-dump fast-curate --source ~/photos/trip --out-dir ./review \
+    --start 2026-03-25 --end 2026-03-29 --top 25 \
+    --baseline-dir ./existing-draft --exclude-posted
+```
+
+The agent reads `review/manifest.json` and views **only** `review/thumbs/`.
+It chooses manifest indices and order, then assembles the selected full-resolution
+originals. Candidate originals should not be opened during review.
+
+```bash
+trip-dump fast-curate --out-dir ./review --assemble "3,7,12" \
+    --draft-dir ./options/trip
+```
+
+Assembly creates numbered 1080x1350 slides, `preview.jpg`, and `ASSEMBLY.json`.
+The agent still checks thumbnails for profile or obscured faces that the Haar
+cascade may miss. If OpenCV is unavailable, `--no-face-check` allows screening,
+marks face status null, and makes visual face review essential. Caption,
+question CTA, and posting window remain agent decisions based on live
+performance data.
+
 ## Stage 0: Download with true capture dates
 
 Amazon Photos' `createdDate` is the **upload date**, not the capture date. Querying
