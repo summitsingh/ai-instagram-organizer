@@ -12,11 +12,13 @@ import sys
 
 from .cluster_trips import main as cluster_main
 from .curate_carousel import main as curate_main
+from .fast_curate import main as fast_curate_main
 from .posted_registry import main as mark_posted_main
 
 STEPS = {
     "cluster": cluster_main,
     "curate": curate_main,
+    "fast-curate": fast_curate_main,
     "mark-posted": mark_posted_main,
 }
 
@@ -25,7 +27,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv or argv[0] in ("-h", "--help"):
         print(
-            "usage: python -m trip_dumps {cluster|curate|mark-posted} "
+            "usage: python -m trip_dumps {cluster|curate|fast-curate|mark-posted} "
             "[script args...]\n"
         )
         print(
@@ -36,6 +38,7 @@ def main(argv=None):
             "  curate      curate a carousel from a trip "
             "(trip_dumps/curate_carousel.py; append --help for its flags)"
         )
+        print("  fast-curate screen locally and assemble selected carousel slides")
         print(
             "  mark-posted register a published draft bundle in the "
             "posted registry (never-posted-twice rule)"
