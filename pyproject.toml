@@ -75,6 +75,7 @@ only-include = [
 # NOT collected here; CI runs the offline files explicitly.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+python_files = ["test_offline_*.py"]
 
 [tool.ruff]
 line-length = 88
