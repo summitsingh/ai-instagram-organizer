@@ -242,3 +242,17 @@ Plus 15 more cataloged trips (Eastern Sierra/Death Valley, White Sands NM road
 trip, Skagit/North Cascades, Central Coast CA + Sequoia, Vegas/Grand Canyon
 road trip, Bethesda/DC, Houston x2, Boston, LA, Dallas, Bar Harbor/Acadia,
 SF Bay, Santa Fe mini-trip, Philadelphia).
+
+## Organize month downloads into trip folders
+
+After downloading, run `python -m trip_dumps organize --source ./downloads
+--work-dir ./organize-work`. The source contains `<YYYY-MM>` month directories.
+Use `--dry-run` to preview assignments, and `--delta` for newly added files.
+The work directory holds the manifest and geocode cache. Previously placed files
+stay in their trip folders. Clusters without GPS remain in the month root.
+
+True capture dates from the photo service API are unavailable at this local stage, so this stage uses the camera filename
+timestamp first, EXIF DateTimeOriginal second, and filesystem mtime last.
+A trip gets one reverse lookup of its GPS median. Cached results avoid repeat
+calls; live requests to Nominatim use a named User-Agent and pause at least
+one second between lookups. Use `--gap-days` and `--geo-split-km` to tune splits.

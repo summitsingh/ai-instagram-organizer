@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- `trip-dump organize` groups month downloads into metadata-based trip folders with delta mode and cached geocoding.
 - `trip-dump fast-curate` for local face, deduplication, sharpness, and exposure
   screening, thumbnail review, and ordered slide assembly.
 - PEP 517/621 package metadata, Hatchling builds, and `ai-instagram-organizer`
