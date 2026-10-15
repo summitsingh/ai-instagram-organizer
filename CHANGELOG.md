@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format follows
 ## [Unreleased]
 
 ### Added
+- `docs/CURATION_PLAYBOOK.md`: token-efficient curation pipeline, face-detection limits, carousel hook/payoff/caption rules.
 - `trip-dump pull` scans Amazon Photos by upload window and selects downloads by true capture date.
 - `trip-dump organize` groups month downloads into metadata-based trip folders with delta mode and cached geocoding.
 - `trip-dump fast-curate` for local face, deduplication, sharpness, and exposure

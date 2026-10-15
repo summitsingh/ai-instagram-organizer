@@ -275,6 +275,7 @@ Turn a giant unsorted photo library into Instagram-ready "trip dump" carousels.
 Proven end to end in Sep-Oct 2026: 18,099 photos taken in 2025 -> 19 trip dumps
 found -> 4 carousel drafts (Telluride, NYC, Big Island, Oahu, 15-17 slides each).
 Full playbook: [`docs/TRIP_DUMP_PIPELINE.md`](docs/TRIP_DUMP_PIPELINE.md).
+Curation judgment: [`docs/CURATION_PLAYBOOK.md`](docs/CURATION_PLAYBOOK.md).
 
 ```bash
 # 1. Cluster photos into trips by capture date + GPS

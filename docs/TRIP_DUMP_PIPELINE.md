@@ -9,6 +9,7 @@ The whole pipeline is token-cheap by design: expensive vision review happens onl
 on ~150 thumbnails per trip, after a cheap local funnel has discarded the rest.
 
 Scripts: `trip_dumps/cluster_trips.py` (stage 1), `trip_dumps/curate_carousel.py` (stage 2).
+Curation judgment (hooks, captions, token discipline): [`docs/CURATION_PLAYBOOK.md`](CURATION_PLAYBOOK.md).
 
 ## Fast curation (token-efficient)
 
