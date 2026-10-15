@@ -256,3 +256,29 @@ timestamp first, EXIF DateTimeOriginal second, and filesystem mtime last.
 A trip gets one reverse lookup of its GPS median. Cached results avoid repeat
 calls; live requests to Nominatim use a named User-Agent and pause at least
 one second between lookups. Use `--gap-days` and `--geo-split-km` to tune splits.
+
+## Pull Amazon Photos by capture date
+
+`python -m trip_dumps pull` scans Amazon Photos upload-date windows in monthly
+chunks, starting 90 days ago unless `--upload-since` is supplied. It selects
+photos by `contentDate` (true capture date), falling back to a camera filename
+stamp only when contentDate is missing. Amazon `createdDate` is upload time and
+is used only to bound the scan. Files with no capture date are reported and
+skipped. The default run lists selected and missing files. Add `--download` to
+fetch them into `<YYYY-MM>` month folders, ready for `organize`.
+
+```bash
+python -m trip_dumps pull --cookie-file ./cookies.json \
+  --base-dir ./downloads --state-file ./pull-state.json \
+  --taken-after 2026-01-01 --taken-before 2026-12-31
+```
+
+Optional `--straggler-year 2025` also selects photos captured in that year.
+The state file caches a completed scan and downloaded node IDs. Local filenames
+are checked by their 22-character node ID prefix, so reruns skip prior files.
+On `AUTH_EXPIRED`, sign in manually in a browser, refresh the cookie file, and
+rerun. The tool never automates login.
+
+A cookie file may be a JSON object such as `{"cookie_name": "example_value"}`
+or an array such as `[{"name": "cookie_name", "value": "example_value"}]`.
+Keep real cookie files and state files outside the repo.

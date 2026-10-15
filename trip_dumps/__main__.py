@@ -15,6 +15,7 @@ from .curate_carousel import main as curate_main
 from .fast_curate import main as fast_curate_main
 from .posted_registry import main as mark_posted_main
 from .organize_trips import main as organize_main
+from .amazon_photos_pull import main as pull_main
 
 STEPS = {
     "cluster": cluster_main,
@@ -22,6 +23,7 @@ STEPS = {
     "fast-curate": fast_curate_main,
     "mark-posted": mark_posted_main,
     "organize": organize_main,
+    "pull": pull_main,
 }
 
 
@@ -29,7 +31,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv or argv[0] in ("-h", "--help"):
         print(
-            "usage: python -m trip_dumps {cluster|curate|fast-curate|mark-posted|organize} "
+            "usage: python -m trip_dumps {cluster|curate|fast-curate|mark-posted|organize|pull} "
             "[script args...]\n"
         )
         print(
@@ -42,6 +44,7 @@ def main(argv=None):
         )
         print("  fast-curate screen locally and assemble selected carousel slides")
         print("  organize    move month-root photos into trip folders")
+        print("  pull        list or download Amazon Photos by capture date")
         print(
             "  mark-posted register a published draft bundle in the "
             "posted registry (never-posted-twice rule)"

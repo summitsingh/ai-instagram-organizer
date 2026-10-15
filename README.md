@@ -292,6 +292,11 @@ python ai_instagram_organizer.py trip-dump curate --out-dir ./oahu-review \
 ```
 (Standalone form also works: `python -m trip_dumps cluster ...` / `python -m trip_dumps curate ...`.)
 
+To download by true capture date, use `python -m trip_dumps pull`; then group
+month downloads with `python -m trip_dumps organize`. See the
+[pull and organize guide](docs/TRIP_DUMP_PIPELINE.md#pull-amazon-photos-by-capture-date)
+for commands, cookie file format, and state behavior.
+
 Key rules baked in: filename timestamps beat EXIF dates, dHash dedup before any
 vision review (~150 thumbnails max per trip, never the full set), full-resolution
 face checks on finalists, strict no-visible-faces rule, original crops preserved.
